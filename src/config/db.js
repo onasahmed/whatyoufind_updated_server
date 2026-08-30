@@ -9,7 +9,7 @@ if (!user || !pass) {
   );
 }
 
-const uri = `mongodb+srv://${user}:${pass}@whatufind-cluster.2omxzv7.mongodb.net/?retryWrites=true&w=majority&appName=whatufind-cluster`;
+const uri = process.env.MONGODB_URI || `mongodb+srv://${user}:${pass}@cluster0.j55wfnv.mongodb.net/whatufind?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
