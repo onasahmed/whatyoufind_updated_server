@@ -4,6 +4,32 @@ const asyncHandler = require("../middleware/asyncHandler");
 
 const router = express.Router();
 
+// 🟢 সব ইউজারের লিস্ট (message পপআপে "real user" খোঁজার জন্য দরকার)
+// পাসওয়ার্ড জাতীয় sensitive কিছু এখানে স্টোর হয় না (auth Firebase দিয়ে হয়),
+// তাও শুধু দরকারি ফিল্ডগুলোই পাঠানো হচ্ছে
+router.get(
+  "/users",
+  asyncHandler(async (req, res) => {
+    const users = await collections
+      .users()
+      .find(
+        {},
+        {
+          projection: {
+            email: 1,
+            displayName: 1,
+            profilePics: 1,
+            photoURL: 1,
+            profession: 1,
+          },
+        }
+      )
+      .toArray();
+    res.send(users);
+  })
+);
+
+// Create a user (rejects if the email is already registered)
 // Create a user (rejects if the email is already registered)
 router.post(
   "/users",
@@ -12,7 +38,8 @@ router.post(
     const existingUser = await collections.users().findOne({ email: user.email });
 
     if (existingUser) {
-      return res.status(400).send({ message: "User with this email already exists" });
+      // 🟢 res.status(400) এর বদলে res.status(200) রিটার্ন করুন
+      return res.status(200).send({ message: "User with this email already exists", insertedId: null });
     }
 
     const result = await collections.users().insertOne(user);
@@ -63,11 +90,25 @@ router.patch(
     const email = req.params.email;
     const { displayName, address, profession } = req.body;
 
+    // 🟢 FIX: এখানে ভুল কালেকশন (posts) আপডেট হচ্ছিলো, কিন্তু আসল পোস্ট/কমেন্ট
+    // homePosts কালেকশনে থাকে (দেখুন src/routes/posts.routes.js) — তাই নাম বদলালেও
+    // পুরনো পোস্টের userName কখনো সিঙ্ক হতো না। এখন homePosts + services + products
+    // তিনটাতেই owner-এর userName আপডেট হবে যাতে পোস্ট/কমেন্ট সবখানে নতুন নাম দেখায়।
     if (displayName) {
-      await collections.posts().updateMany(
-        { userEmail: email },
-        { $set: { userName: displayName } }
-      );
+      await Promise.all([
+        collections.homePosts().updateMany(
+          { userEmail: email },
+          { $set: { userName: displayName } }
+        ),
+        collections.services().updateMany(
+          { $or: [{ userEmail: email }, { email }] },
+          { $set: { userName: displayName } }
+        ),
+        collections.products().updateMany(
+          { $or: [{ userEmail: email }, { email }] },
+          { $set: { userName: displayName } }
+        ),
+      ]);
     }
 
     const updateData = {};
@@ -114,8 +155,6 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await collections.users().findOne({ email: req.params.email });
     if (user && Array.isArray(user.profilePics)) {
-      // .reverse() (not the old always-return-(-1) comparator, which didn't
-      // reliably sort) — newest-pushed picture first.
       user.profilePics = [...user.profilePics].reverse();
     }
     res.send(user);

@@ -2,6 +2,7 @@ const express = require("express");
 const { ObjectId } = require("mongodb");
 const { collections } = require("../config/db");
 const asyncHandler = require("../middleware/asyncHandler");
+const { requireOwnerOnCreate, requireOwnerOnExisting } = require("../middleware/requireOwner");
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.get(
 
 router.post(
   "/interest",
+  requireOwnerOnCreate(),
   asyncHandler(async (req, res) => {
     const result = await collections.interests().insertOne(req.body);
     res.send(result);
@@ -35,6 +37,7 @@ router.get(
 
 router.put(
   "/updateInterest/:id",
+  requireOwnerOnExisting(collections.interests),
   asyncHandler(async (req, res) => {
     const filter = { _id: new ObjectId(req.params.id) };
     const result = await collections
@@ -46,6 +49,7 @@ router.put(
 
 router.delete(
   "/deleteInterest/:id",
+  requireOwnerOnExisting(collections.interests),
   asyncHandler(async (req, res) => {
     const result = await collections.interests().deleteOne({ _id: new ObjectId(req.params.id) });
     res.send(result);

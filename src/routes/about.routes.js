@@ -2,11 +2,14 @@ const express = require("express");
 const { ObjectId } = require("mongodb");
 const { collections } = require("../config/db");
 const asyncHandler = require("../middleware/asyncHandler");
+const { requireOwnerOnCreate, requireOwnerOnExisting } = require("../middleware/requireOwner");
 
 const router = express.Router();
 
+// 🟢 FIX: এখন শুধুমাত্র প্রোফাইলের মালিকই about তৈরি/এডিট/ডিলিট করতে পারবে
 router.post(
   "/about",
+  requireOwnerOnCreate(),
   asyncHandler(async (req, res) => {
     const result = await collections.about().insertOne(req.body);
     res.send(result);
@@ -35,9 +38,19 @@ router.get(
 
 router.put(
   "/updateAbout/:id",
+  requireOwnerOnExisting(collections.about),
   asyncHandler(async (req, res) => {
     const filter = { _id: new ObjectId(req.params.id) };
     const result = await collections.about().updateOne(filter, { $set: { about: req.body.about } });
+    res.send(result);
+  })
+);
+
+router.delete(
+  "/deleteAbout/:id",
+  requireOwnerOnExisting(collections.about),
+  asyncHandler(async (req, res) => {
+    const result = await collections.about().deleteOne({ _id: new ObjectId(req.params.id) });
     res.send(result);
   })
 );

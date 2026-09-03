@@ -2,11 +2,13 @@ const express = require("express");
 const { ObjectId } = require("mongodb");
 const { collections } = require("../config/db");
 const asyncHandler = require("../middleware/asyncHandler");
+const { requireOwnerOnCreate, requireOwnerOnExisting } = require("../middleware/requireOwner");
 
 const router = express.Router();
 
 router.post(
   "/experience",
+  requireOwnerOnCreate(),
   asyncHandler(async (req, res) => {
     const result = await collections.experience().insertOne(req.body);
     res.send(result);
@@ -35,6 +37,7 @@ router.get(
 
 router.put(
   "/updateExperience/:id",
+  requireOwnerOnExisting(collections.experience),
   asyncHandler(async (req, res) => {
     const filter = { _id: new ObjectId(req.params.id) };
     const { time, year, role, institute } = req.body;
@@ -47,6 +50,7 @@ router.put(
 
 router.delete(
   "/deleteExperience/:id",
+  requireOwnerOnExisting(collections.experience),
   asyncHandler(async (req, res) => {
     const result = await collections.experience().deleteOne({ _id: new ObjectId(req.params.id) });
     res.send(result);

@@ -2,11 +2,14 @@ const express = require("express");
 const { ObjectId } = require("mongodb");
 const { collections } = require("../config/db");
 const asyncHandler = require("../middleware/asyncHandler");
+const { requireOwnerOnCreate, requireOwnerOnExisting } = require("../middleware/requireOwner");
 
 const router = express.Router();
 
+// 🟢 FIX: শুধু প্রোফাইলের মালিকই স্কিল যোগ/এডিট/ডিলিট করতে পারবে
 router.post(
   "/skill",
+  requireOwnerOnCreate(),
   asyncHandler(async (req, res) => {
     const result = await collections.skills().insertOne(req.body);
     res.send(result);
@@ -35,6 +38,7 @@ router.get(
 
 router.put(
   "/updateSkill/:id",
+  requireOwnerOnExisting(collections.skills),
   asyncHandler(async (req, res) => {
     const filter = { _id: new ObjectId(req.params.id) };
     const result = await collections.skills().updateOne(filter, { $set: { skills: req.body.skills } });
@@ -44,6 +48,7 @@ router.put(
 
 router.delete(
   "/deleteSkill/:id",
+  requireOwnerOnExisting(collections.skills),
   asyncHandler(async (req, res) => {
     const result = await collections.skills().deleteOne({ _id: new ObjectId(req.params.id) });
     res.send(result);

@@ -16,11 +16,14 @@ const recordsRoutes = require("./src/routes/records.routes");
 const interestsRoutes = require("./src/routes/interests.routes");
 const aboutRoutes = require("./src/routes/about.routes");
 const searchRoutes = require("./src/routes/search.routes");
-
+const messagesRoutes = require("./src/routes/messages.routes");
+const reviewsRoutes = require("./src/routes/reviews.routes");
+// const storiesRoutes = require("./src/routes/stories.routes");
 const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:3000",
   "https://what-u-find.netlify.app"
 ];
@@ -57,7 +60,9 @@ app.use(recordsRoutes);
 app.use(interestsRoutes);
 app.use(aboutRoutes);
 app.use(searchRoutes);
-
+app.use(messagesRoutes);
+app.use(reviewsRoutes);
+// app.use("/stories", storiesRoutes);
 // 404 for anything that didn't match a route above
 app.use((req, res) => {
   res.status(404).send({ success: false, message: "Route not found" });

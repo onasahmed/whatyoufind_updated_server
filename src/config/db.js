@@ -9,7 +9,7 @@ if (!user || !pass) {
   );
 }
 
-const uri = process.env.MONGODB_URI || `mongodb+srv://${user}:${pass}@cluster0.j55wfnv.mongodb.net/whatufind?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = process.env.MONGODB_URI || `mongodb+srv://${user}:${pass}@cluster0.j55wfnv.mongodb.net/whatufind_test?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -34,7 +34,7 @@ function connect() {
 }
 
 function db() {
-  return client.db("whatufind");
+  return client.db("whatufind_test");
 }
 
 // Collection getters — same collection names as the original index.js,
@@ -42,6 +42,7 @@ function db() {
 const collections = {
   users: () => db().collection("users"),
   posts: () => db().collection("posts"),
+  homePosts: () => db().collection("home-posts"), //new line
   services: () => db().collection("service-post"),
   products: () => db().collection("product-post"),
   eduInfo: () => db().collection("education-info"),
@@ -50,6 +51,8 @@ const collections = {
   records: () => db().collection("record"),
   interests: () => db().collection("interest"),
   about: () => db().collection("about"),
+  messages: () => db().collection("messages"), //new line — user-to-user chat messages
+  reviews: () => db().collection("reviews"), //new line — profile reviews/ratings (Publicachieve)
 };
 
 module.exports = { connect, db, collections, client };
