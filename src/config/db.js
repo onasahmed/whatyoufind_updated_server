@@ -5,44 +5,43 @@ const pass = process.env.USER_PASS;
 
 if (!user || !pass) {
   console.warn(
-    "[db] USER_NAME / USER_PASS are not set — check your .env file (see .env.example)."
+    "[db] USER_NAME / USER_PASS are not set — check your .env file."
   );
 }
 
-const uri = process.env.MONGODB_URI || `mongodb+srv://${user}:${pass}@cluster0.j55wfnv.mongodb.net/whatufind_test?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${user}:${pass}@cluster0.j55wfnv.mongodb.net/whatufind_test?retryWrites=true&w=majority`;
 
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-});
+// Global scope-এ client বজায় রাখা হচ্ছে যেন Vercel function রিউজ হতে পারে
+let client;
+let clientPromise;
 
-// Cache the connection promise so serverless invocations (Vercel) reuse
-// the same connection instead of opening a new one per request.
-let connectionPromise = null;
+if (!global._mongoClientPromise) {
+  client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+    connectTimeoutMS: 10000, // ১০ সেকেন্ডের মধ্যে কানেক্ট করার ট্রাই করবে
+  });
+  global._mongoClientPromise = client.connect();
+}
+clientPromise = global._mongoClientPromise;
 
-function connect() {
-  if (!connectionPromise) {
-    connectionPromise = client.connect().then(() => {
-      console.log("[db] Connected to MongoDB");
-      return client;
-    });
-  }
-  return connectionPromise;
+async function connect() {
+  await clientPromise;
+  console.log("[db] Connected to MongoDB");
+  return client;
 }
 
 function db() {
   return client.db("whatufind_test");
 }
 
-// Collection getters — same collection names as the original index.js,
-// exposed as a single object so controllers can destructure what they need.
 const collections = {
   users: () => db().collection("users"),
   posts: () => db().collection("posts"),
-  homePosts: () => db().collection("home-posts"), //new line
+  homePosts: () => db().collection("home-posts"),
   services: () => db().collection("service-post"),
   products: () => db().collection("product-post"),
   eduInfo: () => db().collection("education-info"),
@@ -51,8 +50,8 @@ const collections = {
   records: () => db().collection("record"),
   interests: () => db().collection("interest"),
   about: () => db().collection("about"),
-  messages: () => db().collection("messages"), //new line — user-to-user chat messages
-  reviews: () => db().collection("reviews"), //new line — profile reviews/ratings (Publicachieve)
+  messages: () => db().collection("messages"),
+  reviews: () => db().collection("reviews"),
 };
 
 module.exports = { connect, db, collections, client };
