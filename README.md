@@ -37,7 +37,7 @@ cp .env.example .env   # fill in USER_NAME / USER_PASS (MongoDB Atlas)
 npm start
 ```
 
-Server runs on `http://localhost:3000` by default (or `PORT` from `.env`).
+Server runs on `https://whatyoufind-updated-server.vercel.app` by default (or `PORT` from `.env`).
 
 ## Deploying
 
